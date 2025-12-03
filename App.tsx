@@ -1,0 +1,201 @@
+
+import React, { useState, useEffect } from 'react';
+import { 
+  HashRouter as Router, 
+  Routes, 
+  Route, 
+  NavLink, 
+  useLocation,
+  useNavigate
+} from 'react-router-dom';
+import { 
+  LayoutDashboard, Calendar, Users, FileText, Settings, Bell, Search, 
+  Menu, X, Moon, Sun, Video, MessageSquare, Pill, ClipboardList,
+  BarChart2, HelpCircle
+} from 'lucide-react';
+import { MOCK_MESSAGE_THREADS } from './constants';
+
+// Imported Components
+import DashboardHome from './components/Dashboard/DashboardHome';
+import PatientList from './components/Patients/PatientList';
+import PatientDetail from './components/Patients/PatientDetail';
+import Appointments from './components/Appointments/Appointments';
+import NotesDashboard from './components/Notes/NotesDashboard';
+import NoteEditor from './components/Notes/NoteEditor';
+import TemplateManager from './components/Notes/TemplateManager';
+import PrescriptionDashboard from './components/Prescriptions/PrescriptionDashboard';
+import NewPrescription from './components/Prescriptions/NewPrescription';
+import TelehealthDashboard from './components/Telehealth/TelehealthDashboard';
+import VideoSession from './components/Telehealth/VideoSession';
+import TechCheck from './components/Telehealth/TechCheck';
+import MessagesDashboard from './components/Messages/MessagesDashboard';
+import TaskBoard from './components/Tasks/TaskBoard';
+import ReportsDashboard from './components/Reports/ReportsDashboard';
+import SettingsPage from './components/Settings/SettingsPage';
+import HelpPage from './components/Support/HelpPage';
+import UserProfile from './components/Profile/UserProfile';
+
+// --- Sidebar ---
+const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
+  
+  const links = [
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/' },
+    { icon: <ClipboardList size={20} />, label: 'Tasks', path: '/tasks' },
+    { icon: <Calendar size={20} />, label: 'Appointments', path: '/appointments' },
+    { icon: <Users size={20} />, label: 'Patients', path: '/patients' },
+    { icon: <MessageSquare size={20} />, label: 'Messages', path: '/messages' },
+    { icon: <FileText size={20} />, label: 'Clinical Notes', path: '/notes' },
+    { icon: <Pill size={20} />, label: 'Prescriptions', path: '/prescriptions' },
+    { icon: <Video size={20} />, label: 'Telehealth', path: '/telehealth' },
+    { icon: <BarChart2 size={20} />, label: 'Reports', path: '/reports' },
+    { icon: <HelpCircle size={20} />, label: 'Help & Support', path: '/help' },
+    { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
+  ];
+
+  const unreadMsgCount = MOCK_MESSAGE_THREADS.filter(t => t.isUnread && t.folder === 'Inbox').length;
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden" onClick={onClose} />}
+      
+      <aside className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transition-transform duration-300 transform flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">P</div>
+            <span className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Pract MD</span>
+          </div>
+          <button onClick={onClose} className="lg:hidden text-slate-500 hover:text-slate-700">
+            <X size={20} />
+          </button>
+        </div>
+
+        <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto scrollbar-hide">
+          {links.map(link => (
+            <NavLink
+              key={link.path}
+              to={link.path}
+              onClick={() => window.innerWidth < 1024 && onClose()}
+              className={({ isActive }) => `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' 
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              {link.icon}
+              <span className="font-medium flex-1">{link.label}</span>
+              {link.label === 'Messages' && unreadMsgCount > 0 && (
+                 <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                   {unreadMsgCount}
+                 </span>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+          <div 
+            onClick={() => { navigate('/profile'); if(window.innerWidth < 1024) onClose(); }}
+            className="flex items-center space-x-3 px-4 py-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+          >
+             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">
+                DS
+             </div>
+             <div>
+                <p className="text-sm font-medium text-slate-800 dark:text-white">Dr. Smith</p>
+                <p className="text-xs text-slate-500">View Profile</p>
+             </div>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+};
+
+// --- TopBar ---
+const TopBar: React.FC<{ onMenuClick: () => void; isDark: boolean; toggleTheme: () => void }> = ({ onMenuClick, isDark, toggleTheme }) => {
+  return (
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between sticky top-0 z-30">
+      <div className="flex items-center">
+        <button onClick={onMenuClick} className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg mr-2">
+          <Menu size={20} />
+        </button>
+        
+        <div className="hidden md:flex items-center relative w-64">
+           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+           <input 
+             type="text" 
+             placeholder="Global Search..." 
+             className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary-500 transition-all"
+           />
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-2 md:space-x-4">
+        <button onClick={toggleTheme} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+           {isDark ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+        <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative">
+           <Bell size={20} />
+           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+      </div>
+    </header>
+  );
+};
+
+const App: React.FC = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
+  return (
+    <Router>
+      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        
+        <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+          <TopBar 
+            onMenuClick={() => setIsSidebarOpen(true)} 
+            isDark={isDark} 
+            toggleTheme={() => setIsDark(!isDark)} 
+          />
+          
+          <main className="flex-1 overflow-x-hidden overflow-y-auto">
+            <Routes>
+              <Route path="/" element={<DashboardHome />} />
+              <Route path="/tasks" element={<TaskBoard />} />
+              <Route path="/patients" element={<PatientList />} />
+              <Route path="/patients/:id" element={<PatientDetail />} />
+              <Route path="/appointments" element={<Appointments />} />
+              <Route path="/notes" element={<NotesDashboard />} />
+              <Route path="/notes/new" element={<NoteEditor />} />
+              <Route path="/notes/templates" element={<TemplateManager />} />
+              <Route path="/prescriptions" element={<PrescriptionDashboard />} />
+              <Route path="/prescriptions/new" element={<NewPrescription />} />
+              <Route path="/telehealth" element={<TelehealthDashboard />} />
+              <Route path="/telehealth/session/:id" element={<VideoSession />} />
+              <Route path="/telehealth/check" element={<TechCheck />} />
+              <Route path="/messages" element={<MessagesDashboard />} />
+              <Route path="/reports" element={<ReportsDashboard />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="*" element={<div className="p-10 text-center text-slate-500">Page not found</div>} />
+            </Routes>
+          </main>
+        </div>
+      </div>
+    </Router>
+  );
+};
+
+export default App;
