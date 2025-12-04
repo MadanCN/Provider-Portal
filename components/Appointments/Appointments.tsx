@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, List, Plus, Clock } from 'lucide-react';
-import { MOCK_APPOINTMENTS } from '../../constants';
+import { MOCK_APPOINTMENTS, MOCK_AVAILABILITY } from '../../constants';
 import { Appointment, AppointmentStatus } from '../../types';
 import AppointmentCalendar from './AppointmentCalendar';
 import AppointmentList from './AppointmentList';
@@ -123,6 +124,7 @@ const Appointments: React.FC = () => {
          {viewMode === 'Calendar' ? (
             <AppointmentCalendar 
                appointments={appointments} 
+               availabilitySlots={MOCK_AVAILABILITY}
                viewMode={calendarView} 
                currentDate={currentDate} 
                onAppointmentClick={setSelectedAppointment}

@@ -11,7 +11,7 @@ import {
 import { 
   LayoutDashboard, Calendar, Users, FileText, Settings, Bell, Search, 
   Menu, X, Moon, Sun, Video, MessageSquare, Pill, ClipboardList,
-  BarChart2, HelpCircle
+  BarChart2, HelpCircle, Clock
 } from 'lucide-react';
 import { MOCK_MESSAGE_THREADS } from './constants';
 
@@ -31,6 +31,7 @@ import TechCheck from './components/Telehealth/TechCheck';
 import MessagesDashboard from './components/Messages/MessagesDashboard';
 import TaskBoard from './components/Tasks/TaskBoard';
 import ReportsDashboard from './components/Reports/ReportsDashboard';
+import AvailabilityManager from './components/Availability/AvailabilityManager';
 import SettingsPage from './components/Settings/SettingsPage';
 import SupportPage from './components/Support/SupportPage';
 import UserProfile from './components/Profile/UserProfile';
@@ -42,17 +43,24 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
   const navigate = useNavigate();
   
   const links = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/' },
-    { icon: <ClipboardList size={20} />, label: 'Tasks', path: '/tasks' },
-    { icon: <Calendar size={20} />, label: 'Appointments', path: '/appointments' },
-    { icon: <Users size={20} />, label: 'Patients', path: '/patients' },
-    { icon: <MessageSquare size={20} />, label: 'Messages', path: '/messages' },
-    { icon: <FileText size={20} />, label: 'Clinical Notes', path: '/notes' },
-    { icon: <Pill size={20} />, label: 'Prescriptions', path: '/prescriptions' },
-    { icon: <Video size={20} />, label: 'Telehealth', path: '/telehealth' },
-    { icon: <BarChart2 size={20} />, label: 'Reports', path: '/reports' },
-    { icon: <HelpCircle size={20} />, label: 'Support', path: '/support' },
-    { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
+    { header: 'Clinical', items: [
+      { icon: <LayoutDashboard size={18} />, label: 'Dashboard', path: '/' },
+      { icon: <Calendar size={18} />, label: 'Appointments', path: '/appointments' },
+      { icon: <Users size={18} />, label: 'Patients', path: '/patients' },
+      { icon: <FileText size={18} />, label: 'Clinical Notes', path: '/notes' },
+      { icon: <Pill size={18} />, label: 'Prescriptions', path: '/prescriptions' },
+      { icon: <Video size={18} />, label: 'Telehealth', path: '/telehealth' },
+    ]},
+    { header: 'Administrative', items: [
+      { icon: <ClipboardList size={18} />, label: 'Tasks', path: '/tasks' },
+      { icon: <MessageSquare size={18} />, label: 'Messages', path: '/messages' },
+      { icon: <BarChart2 size={18} />, label: 'Reports', path: '/reports' },
+      { icon: <Clock size={18} />, label: 'Availability', path: '/availability' },
+    ]},
+    { header: 'System', items: [
+      { icon: <HelpCircle size={18} />, label: 'Support', path: '/support' },
+      { icon: <Settings size={18} />, label: 'Settings', path: '/settings' },
+    ]}
   ];
 
   const unreadMsgCount = MOCK_MESSAGE_THREADS.filter(t => t.isUnread && t.folder === 'Inbox').length;
@@ -63,7 +71,7 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
       {isOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden" onClick={onClose} />}
       
       <aside className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transition-transform duration-300 transform flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div className="p-6 flex items-center justify-between">
+        <div className="p-6 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">P</div>
             <span className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Pract MD</span>
@@ -73,30 +81,37 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
           </button>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto scrollbar-hide">
-          {links.map(link => (
-            <NavLink
-              key={link.path}
-              to={link.path}
-              onClick={() => window.innerWidth < 1024 && onClose()}
-              className={({ isActive }) => `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' 
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              {link.icon}
-              <span className="font-medium flex-1">{link.label}</span>
-              {link.label === 'Messages' && unreadMsgCount > 0 && (
-                 <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                   {unreadMsgCount}
-                 </span>
-              )}
-            </NavLink>
+        <nav className="flex-1 px-4 mt-2 overflow-y-auto scrollbar-hide space-y-6">
+          {links.map((group, idx) => (
+            <div key={idx}>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4">{group.header}</h3>
+              <div className="space-y-1">
+                {group.items.map(link => (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => window.innerWidth < 1024 && onClose()}
+                    className={({ isActive }) => `flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
+                      isActive 
+                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400 font-medium' 
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {link.icon}
+                    <span className="flex-1">{link.label}</span>
+                    {link.label === 'Messages' && unreadMsgCount > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {unreadMsgCount}
+                      </span>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
           <div 
             onClick={() => { navigate('/profile'); if(window.innerWidth < 1024) onClose(); }}
             className="flex items-center space-x-3 px-4 py-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -158,6 +173,7 @@ const App: React.FC = () => {
               <Route path="/telehealth/check" element={<TechCheck />} />
               <Route path="/messages" element={<MessagesDashboard />} />
               <Route path="/reports" element={<ReportsDashboard />} />
+              <Route path="/availability" element={<AvailabilityManager />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="/help" element={<SupportPage />} /> {/* Redirect or Alias */}

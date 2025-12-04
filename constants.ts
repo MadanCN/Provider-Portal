@@ -24,7 +24,8 @@ import {
   PracticeInfo,
   SupportTicket,
   Notification,
-  HelpArticle
+  HelpArticle,
+  AvailabilitySlot
 } from './types';
 
 export const PRACTICE_INFO: PracticeInfo = {
@@ -639,3 +640,28 @@ export const CONTEXTUAL_HELP_MAP: Record<string, HelpArticle[]> = {
     { id: 'h7', title: 'EPCS Signing', content: 'Controlled substances require 2FA. Ensure you have your token ready before signing.' }
   ]
 };
+
+// --- Availability Mocks ---
+
+export const MOCK_AVAILABILITY: AvailabilitySlot[] = [
+  {
+    id: 'av1',
+    title: 'Vacation',
+    type: 'Leave',
+    start: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 10).toISOString(),
+    end: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 15).toISOString(),
+    isRecurring: false,
+    color: 'red'
+  },
+  {
+    id: 'av2',
+    title: 'Lunch Break',
+    type: 'Break',
+    start: new Date(today.setHours(12, 0)).toISOString(),
+    end: new Date(today.setHours(13, 0)).toISOString(),
+    isRecurring: true,
+    recurrenceRule: 'Daily',
+    recurringDays: [1, 2, 3, 4, 5], // Mon-Fri
+    color: 'orange'
+  }
+];

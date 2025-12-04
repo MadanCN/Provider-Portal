@@ -400,3 +400,19 @@ export interface Notification {
   read: boolean;
   type: 'info' | 'success' | 'warning' | 'error';
 }
+
+// --- Availability Types ---
+
+export type AvailabilityType = 'Leave' | 'Break' | 'OnCall';
+
+export interface AvailabilitySlot {
+  id: string;
+  title: string; // e.g., "Vacation", "Lunch Break"
+  type: AvailabilityType;
+  start: string; // ISO string
+  end: string; // ISO string
+  isRecurring: boolean;
+  recurrenceRule?: string; // Simplified description like "Daily", "Weekly"
+  recurringDays?: number[]; // Array of day indices (0=Sun, 1=Mon, etc.)
+  color?: string;
+}

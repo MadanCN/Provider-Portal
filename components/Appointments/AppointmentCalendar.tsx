@@ -1,14 +1,16 @@
+
 import React from 'react';
-import { Appointment, AppointmentStatus, AppointmentType } from '../../types';
+import { Appointment, AppointmentStatus, AvailabilitySlot } from '../../types';
 
 interface AppointmentCalendarProps {
   appointments: Appointment[];
+  availabilitySlots?: AvailabilitySlot[];
   viewMode: 'Day' | 'Week' | 'Month';
   currentDate: Date;
   onAppointmentClick: (appointment: Appointment) => void;
 }
 
-const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({ appointments, viewMode, currentDate, onAppointmentClick }) => {
+const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({ appointments, availabilitySlots = [], viewMode, currentDate, onAppointmentClick }) => {
   const hours = Array.from({ length: 13 }, (_, i) => i + 7); // 7 AM to 7 PM
 
   const getDayAppointments = (date: Date) => {
@@ -17,6 +19,52 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({ appointments,
       return apptDate.getDate() === date.getDate() &&
              apptDate.getMonth() === date.getMonth() &&
              apptDate.getFullYear() === date.getFullYear();
+    });
+  };
+
+  // Helper to determine if a slot intersects with a specific Hour on a specific Day
+  const getSlotsForHour = (date: Date, hour: number) => {
+    return availabilitySlots.filter(slot => {
+      const slotStart = new Date(slot.start);
+      const slotEnd = new Date(slot.end);
+      
+      // 1. Check Date Match (Specific or Recurring)
+      let isDayMatch = false;
+      if (slot.isRecurring) {
+        if (slot.recurringDays?.includes(date.getDay())) {
+          isDayMatch = true;
+        }
+      } else {
+        // Simple date check (ignoring time for the day match part)
+        const checkDate = new Date(date); 
+        checkDate.setHours(0,0,0,0);
+        const sDate = new Date(slotStart); 
+        sDate.setHours(0,0,0,0);
+        const eDate = new Date(slotEnd); 
+        eDate.setHours(0,0,0,0);
+        
+        if (checkDate >= sDate && checkDate <= eDate) {
+          isDayMatch = true;
+        }
+      }
+
+      if (!isDayMatch) return false;
+
+      // 2. Check Time Intersection
+      const slotStartHour = slotStart.getHours();
+      const slotEndHour = slotEnd.getHours();
+      
+      // Logic: Does the slot exist within this hour block?
+      // A slot exists in hour X if:
+      // - It starts in hour X (startHour == X)
+      // - It ends in hour X (endHour == X, AND minutes > 0)
+      // - It spans across hour X (startHour < X < endHour)
+      
+      if (hour > slotStartHour && hour < slotEndHour) return true;
+      if (hour === slotStartHour) return true;
+      if (hour === slotEndHour && slotEnd.getMinutes() > 0) return true;
+
+      return false;
     });
   };
 
@@ -55,11 +103,25 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({ appointments,
                const dayAppts = getDayAppointments(currentDayDate);
                const isToday = new Date().toDateString() === currentDayDate.toDateString();
 
+               // Check if there's an all-day leave
+               const onLeave = availabilitySlots.some(s => {
+                  if (s.type !== 'Leave') return false;
+                  // Simplified recurring/date check for month view icon
+                  if (s.isRecurring) return s.recurringDays?.includes(currentDayDate.getDay());
+                  const sDate = new Date(s.start); sDate.setHours(0,0,0,0);
+                  const eDate = new Date(s.end); eDate.setHours(0,0,0,0);
+                  const cDate = new Date(currentDayDate); cDate.setHours(0,0,0,0);
+                  return cDate >= sDate && cDate <= eDate;
+               });
+
                return (
-                  <div key={day} className={`min-h-[100px] border-r border-b border-slate-100 dark:border-slate-800 p-2 relative group ${isToday ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}>
-                     <span className={`text-sm font-medium ${isToday ? 'bg-primary-600 text-white w-6 h-6 flex items-center justify-center rounded-full' : 'text-slate-700 dark:text-slate-300'}`}>
-                       {day}
-                     </span>
+                  <div key={day} className={`min-h-[100px] border-r border-b border-slate-100 dark:border-slate-800 p-2 relative group ${isToday ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''} ${onLeave ? 'bg-slate-50 dark:bg-slate-900/50' : ''}`}>
+                     <div className="flex justify-between items-start">
+                        <span className={`text-sm font-medium ${isToday ? 'bg-primary-600 text-white w-6 h-6 flex items-center justify-center rounded-full' : 'text-slate-700 dark:text-slate-300'}`}>
+                          {day}
+                        </span>
+                        {onLeave && <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-500 px-1.5 rounded">OFF</span>}
+                     </div>
                      
                      <div className="mt-1 space-y-1">
                         {dayAppts.slice(0, 3).map(appt => (
@@ -105,7 +167,44 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({ appointments,
                  {hour > 12 ? `${hour - 12} PM` : `${hour} ${hour === 12 ? 'PM' : 'AM'}`}
                </div>
                <div className="flex-1 relative p-1">
-                 {/* Slots for this hour */}
+                 
+                 {/* Render Availability Blocks (Breaks/Leaves) */}
+                 {getSlotsForHour(currentDate, hour).map(slot => {
+                    // Calculate visual dimensions for slot
+                    const sStart = new Date(slot.start);
+                    const sEnd = new Date(slot.end);
+                    
+                    let startMin = sStart.getMinutes();
+                    // If slot started in a previous hour, visual start is 0
+                    if (sStart.getHours() < hour) startMin = 0;
+
+                    let durationMin = (sEnd.getTime() - sStart.getTime()) / (1000 * 60);
+                    // If slot extends beyond this hour, cap visual end
+                    // But simpler to just calc local height
+                    // Local start in minutes relative to this hour:
+                    const top = (startMin / 60) * 100;
+                    
+                    // Duration within this hour box?
+                    // End time in this hour
+                    let endMin = 60;
+                    if (sEnd.getHours() === hour) endMin = sEnd.getMinutes();
+                    else if (sEnd.getHours() < hour) endMin = 0; // Should not happen given getSlotsForHour filter
+                    
+                    const height = ((endMin - startMin) / 60) * 100;
+
+                    return (
+                       <div 
+                          key={`slot-${slot.id}-${hour}`}
+                          className="absolute left-0 right-0 z-0 bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center border-y border-slate-200 dark:border-slate-600 opacity-80"
+                          style={{ top: `${top}%`, height: `${height}%` }}
+                          title={slot.title}
+                       >
+                          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{slot.title}</span>
+                       </div>
+                    );
+                 })}
+
+                 {/* Slots for this hour (Appointments) */}
                  {dayAppts.filter(a => new Date(a.startTime).getHours() === hour).map(appt => {
                     const minutes = new Date(appt.startTime).getMinutes();
                     const top = (minutes / 60) * 100;
@@ -115,7 +214,7 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({ appointments,
                       <div 
                         key={appt.id}
                         onClick={() => onAppointmentClick(appt)}
-                        className={`absolute left-2 right-2 rounded border px-2 py-1 cursor-pointer shadow-sm hover:shadow-md transition-all z-0 hover:z-10 ${getStatusColor(appt.status)}`}
+                        className={`absolute left-2 right-2 rounded border px-2 py-1 cursor-pointer shadow-sm hover:shadow-md transition-all z-10 hover:z-20 ${getStatusColor(appt.status)}`}
                         style={{ top: `${top}%`, height: `${height}%`, minHeight: '30px' }}
                       >
                          <div className="flex justify-between">
@@ -139,7 +238,7 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({ appointments,
   }
 
   // --- Week View ---
-  // Simplified Week View: Columns = Days, Rows = Hours
+  // Week View: Columns = Days, Rows = Hours
   const weekStart = new Date(currentDate);
   weekStart.setDate(currentDate.getDate() - currentDate.getDay()); // Start on Sunday
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -174,19 +273,47 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({ appointments,
                 </div>
                 {weekDays.map(day => {
                    const cellAppts = getDayAppointments(day).filter(a => new Date(a.startTime).getHours() === hour);
+                   const blockSlots = getSlotsForHour(day, hour);
+
                    return (
                       <div key={day.toISOString()} className="flex-1 border-l border-slate-100 dark:border-slate-800 relative p-0.5 group">
+                         
+                         {/* Render Availability Blocks */}
+                         {blockSlots.map(slot => {
+                            const sStart = new Date(slot.start);
+                            const sEnd = new Date(slot.end);
+                            let startMin = sStart.getHours() < hour ? 0 : sStart.getMinutes();
+                            let endMin = sEnd.getHours() > hour ? 60 : sEnd.getMinutes();
+                            if (sEnd.getHours() === hour && sEnd.getMinutes() === 0) endMin = 0; // Handle exact hour end if logic falls through (usually captured by > hour) but simpler:
+                            if (sEnd.getHours() > hour) endMin = 60;
+
+                            const top = (startMin / 60) * 100;
+                            const height = ((endMin - startMin) / 60) * 100;
+
+                            return (
+                               <div 
+                                  key={`block-${slot.id}`}
+                                  className="absolute left-0 right-0 bg-slate-100 dark:bg-slate-700/50 z-0 flex items-center justify-center opacity-80"
+                                  style={{ top: `${top}%`, height: `${height}%` }}
+                                  title={slot.title}
+                               >
+                                  <span className="text-[8px] text-slate-400 uppercase font-bold tracking-wider rotate-0 opacity-0 group-hover:opacity-100 transition-opacity">{slot.title}</span>
+                               </div>
+                            );
+                         })}
+
+                         {/* Render Appointments */}
                          {cellAppts.map(appt => (
                             <div 
                               key={appt.id}
                               onClick={() => onAppointmentClick(appt)}
-                              className={`mb-1 rounded px-1 py-0.5 text-[10px] truncate cursor-pointer border-l-2 ${getStatusColor(appt.status)}`}
+                              className={`relative z-10 mb-1 rounded px-1 py-0.5 text-[10px] truncate cursor-pointer border-l-2 shadow-sm hover:shadow ${getStatusColor(appt.status)}`}
                             >
                                <span className="font-semibold">{new Date(appt.startTime).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</span> {appt.patient.name}
                             </div>
                          ))}
                          {/* Placeholder for click-to-add */}
-                         <div className="absolute inset-0 opacity-0 group-hover:opacity-10 pointer-events-none group-hover:pointer-events-auto cursor-pointer hover:bg-primary-50/20" />
+                         <div className="absolute inset-0 opacity-0 group-hover:opacity-10 pointer-events-none group-hover:pointer-events-auto cursor-pointer hover:bg-primary-50/20 z-0" />
                       </div>
                    )
                 })}
