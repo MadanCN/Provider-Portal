@@ -32,8 +32,10 @@ import MessagesDashboard from './components/Messages/MessagesDashboard';
 import TaskBoard from './components/Tasks/TaskBoard';
 import ReportsDashboard from './components/Reports/ReportsDashboard';
 import SettingsPage from './components/Settings/SettingsPage';
-import HelpPage from './components/Support/HelpPage';
+import SupportPage from './components/Support/SupportPage';
 import UserProfile from './components/Profile/UserProfile';
+import TopBar from './components/Layout/TopBar';
+import ContextualHelp from './components/Layout/ContextualHelp';
 
 // --- Sidebar ---
 const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
@@ -49,7 +51,7 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
     { icon: <Pill size={20} />, label: 'Prescriptions', path: '/prescriptions' },
     { icon: <Video size={20} />, label: 'Telehealth', path: '/telehealth' },
     { icon: <BarChart2 size={20} />, label: 'Reports', path: '/reports' },
-    { icon: <HelpCircle size={20} />, label: 'Help & Support', path: '/help' },
+    { icon: <HelpCircle size={20} />, label: 'Support', path: '/support' },
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
   ];
 
@@ -113,41 +115,10 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
   );
 };
 
-// --- TopBar ---
-const TopBar: React.FC<{ onMenuClick: () => void; isDark: boolean; toggleTheme: () => void }> = ({ onMenuClick, isDark, toggleTheme }) => {
-  return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between sticky top-0 z-30">
-      <div className="flex items-center">
-        <button onClick={onMenuClick} className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg mr-2">
-          <Menu size={20} />
-        </button>
-        
-        <div className="hidden md:flex items-center relative w-64">
-           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-           <input 
-             type="text" 
-             placeholder="Global Search..." 
-             className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary-500 transition-all"
-           />
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2 md:space-x-4">
-        <button onClick={toggleTheme} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-           {isDark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-        <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative">
-           <Bell size={20} />
-           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
-      </div>
-    </header>
-  );
-};
-
 const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
     if (isDark) {
@@ -162,11 +133,12 @@ const App: React.FC = () => {
       <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         
-        <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+        <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative">
           <TopBar 
             onMenuClick={() => setIsSidebarOpen(true)} 
             isDark={isDark} 
             toggleTheme={() => setIsDark(!isDark)} 
+            onToggleHelp={() => setIsHelpOpen(!isHelpOpen)}
           />
           
           <main className="flex-1 overflow-x-hidden overflow-y-auto">
@@ -187,11 +159,15 @@ const App: React.FC = () => {
               <Route path="/messages" element={<MessagesDashboard />} />
               <Route path="/reports" element={<ReportsDashboard />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/help" element={<HelpPage />} />
+              <Route path="/support" element={<SupportPage />} />
+              <Route path="/help" element={<SupportPage />} /> {/* Redirect or Alias */}
               <Route path="/profile" element={<UserProfile />} />
               <Route path="*" element={<div className="p-10 text-center text-slate-500">Page not found</div>} />
             </Routes>
           </main>
+
+          {/* Contextual Help Sidebar */}
+          <ContextualHelp isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
         </div>
       </div>
     </Router>

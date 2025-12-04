@@ -372,3 +372,31 @@ export interface UserPreferences {
   theme: 'light' | 'dark';
   dashboardLayout: WidgetConfig[];
 }
+
+// --- Support & Notification Types ---
+
+export interface SupportTicket {
+  id: string;
+  subject: string;
+  category: string;
+  status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
+  priority: 'Low' | 'Medium' | 'High';
+  createdAt: string;
+  lastUpdated: string;
+}
+
+export interface HelpArticle {
+  id: string;
+  title: string;
+  content: string;
+  relatedLinks?: { label: string; url: string }[];
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  read: boolean;
+  type: 'info' | 'success' | 'warning' | 'error';
+}

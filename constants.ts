@@ -21,7 +21,10 @@ import {
   MessageThread,
   MessageTemplate,
   Task,
-  PracticeInfo
+  PracticeInfo,
+  SupportTicket,
+  Notification,
+  HelpArticle
 } from './types';
 
 export const PRACTICE_INFO: PracticeInfo = {
@@ -604,3 +607,35 @@ export const MOCK_TASKS: Task[] = [
     createdAt: new Date(new Date().setDate(today.getDate() - 2)).toISOString()
   }
 ];
+
+// --- Support Mocks ---
+
+export const MOCK_TICKETS: SupportTicket[] = [
+  { id: 'tk1', subject: 'Printer Configuration', category: 'IT Support', status: 'Open', priority: 'Medium', createdAt: '2023-10-25', lastUpdated: '1 hour ago' },
+  { id: 'tk2', subject: 'EPCS Token Locked', category: 'Security', status: 'Resolved', priority: 'High', createdAt: '2023-10-20', lastUpdated: '2 days ago' },
+  { id: 'tk3', subject: 'New User Request', category: 'Admin', status: 'In Progress', priority: 'Low', createdAt: '2023-10-24', lastUpdated: 'Yesterday' }
+];
+
+export const MOCK_NOTIFICATIONS: Notification[] = [
+  { id: 'n1', title: 'Lab Result', message: 'Critical value for James Howlett', time: '10m ago', read: false, type: 'error' },
+  { id: 'n2', title: 'New Message', message: 'Sarah Connor sent a refill request', time: '1h ago', read: false, type: 'info' },
+  { id: 'n3', title: 'System Update', message: 'Maintenance scheduled for tonight at 2AM', time: '4h ago', read: true, type: 'warning' },
+];
+
+export const CONTEXTUAL_HELP_MAP: Record<string, HelpArticle[]> = {
+  '/patients': [
+    { id: 'h1', title: 'Searching Patients', content: 'Use the global search bar or the patient list filters to find records by Name, MRN, or DOB.' },
+    { id: 'h2', title: 'Adding New Patient', content: 'Click the "Add Patient" button to open the registration form. Ensure you have insurance details handy.' }
+  ],
+  '/appointments': [
+    { id: 'h3', title: 'Scheduling Visits', content: 'Click on a calendar slot to book a new appointment. Drag and drop appointments to reschedule.' },
+    { id: 'h4', title: 'Managing Status', content: 'Use the status dropdown to mark patients as Checked In, In Progress, or Completed.' }
+  ],
+  '/notes': [
+    { id: 'h5', title: 'Using Templates', content: 'Select a template from the dropdown to pre-fill note sections. You can manage templates in settings.' },
+    { id: 'h6', title: 'Dictation', content: 'Click the microphone icon in any text field to start voice-to-text dictation.' }
+  ],
+  '/prescriptions': [
+    { id: 'h7', title: 'EPCS Signing', content: 'Controlled substances require 2FA. Ensure you have your token ready before signing.' }
+  ]
+};
